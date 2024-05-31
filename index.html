@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ứng dụng Đọc Thẻ NFC và Tương Tác với Web3</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
+</head>
+
+<body>
+    <h1>Ứng dụng Đọc Thẻ NFC và Tương Tác với Web3</h1>
+    <p id="result" class="result"></p>
+    <div id="notification" class="notification"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const ndef = new NDEFReader();
+                await ndef.scan();
+
+                ndef.onreading = event => {
+                    const decoder = new TextDecoder();
+                    for (const record of event.message.records) {
+                        if (record.recordType === "text") {
+                            const web3Address = decoder.decode(record.data);
+                            document.getElementById('result').textContent = `Địa chỉ Web3: ${web3Address}`;
+                            showNotification(web3Address);
+                            getWeb3Data(web3Address);
+                        }
+                    }
+                };
+
+                ndef.onreadingerror = () => {
+                    document.getElementById('result').textContent = 'Lỗi khi đọc thẻ NFC';
+                    document.getElementById('result').classList.add('error');
+                };
+            } catch (error) {
+                console.error(error);
+                document.getElementById('result').textContent = 'Thiết bị hoặc trình duyệt không hỗ trợ NFC';
+                document.getElementById('result').classList.add('error');
+            }
+        });
+
+        async function getWeb3Data(address) {
+            const abi = [/* ABI của contract */];
+            const contractAddress = '/* Địa chỉ của contract */';
+
+            if (window.ethereum) {
+                const web3 = new Web3(window.ethereum);
+                try {
+                    const contract = new web3.eth.Contract(abi, contractAddress);
+                    const data = await contract.methods.yourMethod(address).call();  // Thay yourMethod bằng phương thức thực tế của bạn
+
+                    const balance = await web3.eth.getBalance(address);
+                    document.getElementById('result').textContent += `\nBalance: ${web3.utils.fromWei(balance, 'ether')} ETH`;
+                    document.getElementById('result').classList.remove('error');
+                } catch (error) {
+                    console.error(error);
+                    document.getElementById('result').textContent = 'Lỗi khi tương tác với Web3';
+                    document.getElementById('result').classList.add('error');
+                }
+            } else {
+                document.getElementById('result').textContent = 'Web3 không được hỗ trợ trên trình duyệt này';
+                document.getElementById('result').classList.add('error');
+            }
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = `Đã đọc được địa chỉ: ${message}`;
+            notification.style.display = 'block';
+            notification.addEventListener('click', () => {
+                notification.style.display = 'none';
+            });
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+
+</html>
